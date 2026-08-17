@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://mx10fs875c3i"]
+
+[ext_resource type="Texture2D" uid="uid://crihptbytp2ti" path="res://assets/player/player.png" id="1_4flbx"]
+
+[node name="Player" type="CharacterBody2D" unique_id=1347927597]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=198553227]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=544398296]
+texture = ExtResource("1_4flbx")

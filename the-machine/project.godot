@@ -11,8 +11,8 @@ config_version=5
 [application]
 
 config/name="TheMachine"
+run/main_scene="uid://bc0hqj4rqavj7"
 config/features=PackedStringArray("4.7", "Mobile")
-config/icon="res://icon.svg"
 
 [display]
 
@@ -26,4 +26,4 @@ window/stretch/aspect="expand"
 [rendering]
 
 rendering_device/driver.windows="d3d12"
-renderer/rendering_method="mobile"
+renderer/rendering_method="gl_compatibility"

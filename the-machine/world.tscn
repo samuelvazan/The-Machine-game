@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://b6lliu6062tm8"]
+
+[ext_resource type="Script" uid="uid://dilmaqs6memok" path="res://code/tile_manager.gd" id="1_f3sb7"]
+[ext_resource type="PackedScene" uid="uid://dw3sg6ug7r2fb" path="res://chunk.tscn" id="2_fj7yv"]
+
+[node name="World" type="Node" unique_id=78509365]
+
+[node name="TileManager" type="Node" parent="." unique_id=1210614944]
+script = ExtResource("1_f3sb7")
+chunk_scene = ExtResource("2_fj7yv")
