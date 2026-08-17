@@ -9,15 +9,22 @@ var tile_size: int = 8
 var chunk_size: int = 128
 
 # Distance measured in chunks.
+# sqrt(2) ~= 1.414, so 1.5 keeps the whole 3x3 grid.
 var unload_distance: float = 1.5
 
 @onready var player: Node2D = $"../../Player"
+
 
 var current_chunk: Vector2i
 
 
 func _ready() -> void:
 	current_chunk = get_player_chunk()
+
+	# Generate the chunk beneath the player immediately.
+	create_chunk(current_chunk, true)
+
+	# Create the other 8 chunks.
 	update_chunks()
 
 
@@ -46,31 +53,36 @@ func get_player_chunk() -> Vector2i:
 func update_chunks() -> void:
 	var chunks_to_create: Array[Vector2i] = []
 
-	# Make the desired 3x3 grid.
+	# Build the desired 3x3 grid.
 	for y in range(-1, 2):
 		for x in range(-1, 2):
-			var chunk_position := current_chunk + Vector2i(x, y)
+			var chunk_position := (
+				current_chunk
+				+ Vector2i(x, y)
+			)
+
 			chunks_to_create.append(chunk_position)
 
 
-	# Check existing chunks.
+	# Check currently loaded chunks.
 	for child in get_children():
 
-		# Only our generated chunks have this metadata.
 		if not child.has_meta("chunk_coord"):
 			continue
 
-		var chunk_coord: Vector2i = child.get_meta("chunk_coord")
+		var chunk_coord: Vector2i = child.get_meta(
+			"chunk_coord"
+		)
 
 		var distance := Vector2(chunk_coord).distance_to(
 			Vector2(current_chunk)
 		)
 
-		# Unload chunks that are too far away.
+		# Remove chunks that are too far away.
 		if distance > unload_distance:
 			child.queue_free()
 
-		# This chunk already exists, so don't create it again.
+		# Don't create chunks that already exist.
 		if chunk_coord in chunks_to_create:
 			chunks_to_create.erase(chunk_coord)
 
@@ -80,7 +92,11 @@ func update_chunks() -> void:
 		create_chunk(chunk_coord)
 
 
-func create_chunk(chunk_coord: Vector2i) -> void:
+func create_chunk(
+	chunk_coord: Vector2i,
+	synchronous: bool = false
+) -> void:
+
 	var chunk := chunk_scene.instantiate() as Node2D
 
 	if chunk == null:
@@ -89,12 +105,12 @@ func create_chunk(chunk_coord: Vector2i) -> void:
 
 	var chunk_pixel_size := tile_size * chunk_size
 
-	# Give the Chunk.gd script its information.
+	# Give Chunk.gd all its information BEFORE add_child().
+	# add_child() causes _ready() to run.
 	chunk.chunk_coord = chunk_coord
 	chunk.chunk_size = chunk_size
+	chunk.generate_synchronously = synchronous
 
-	# Also store the coordinate as metadata so TileManager
-	# can recognize chunks without needing a custom class.
 	chunk.set_meta("chunk_coord", chunk_coord)
 
 	chunk.position = Vector2(

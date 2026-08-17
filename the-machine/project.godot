@@ -46,3 +46,4 @@ move_right={
 
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.043039158, 0.04303915, 0.04303915, 1)
