@@ -3,7 +3,7 @@ extends Node
 
 @onready var player: Node2D = $"../../Player"
 
-const chunkScene := preload("res://chunk.tscn")
+const chunkScene : PackedScene = preload("res://chunk.tscn")
 
 const ChunkSizeX: int = 128
 const ChunkSizeY: int = 128
@@ -17,9 +17,15 @@ func deleteChunk(position: Vector2i) -> void:
 	if chunks.has(position):
 		chunks.erase(position)
 func createvchunk(position: Vector2i) -> void:
-	vchunks[position] = chunkScene.new(ChunkSizeX, ChunkSizeY)
+	var vchunk = chunkScene.instantiate()
+	vchunk.chunk_coord = position
+	vchunk.chunk_size = ChunkSizeX
+	vchunk.position = Vector2(position.x * ChunkSizeX * tileSize, position.y * ChunkSizeY * tileSize)
+	add_child(vchunk)
+	vchunks[position] = vchunk
 func deletevchunk(position: Vector2i) -> void:
 	if vchunks.has(position):
+		vchunks[position].queue_free()
 		vchunks.erase(position)
 
 
@@ -43,6 +49,8 @@ func Write(position: Vector2i, tile: int, dirty: bool) -> void:
 	var chunk_pos = getChunkCoord(position)
 	var local_pos = getLocalCoord(position)
 	modifyChunk(chunk_pos, local_pos, tile, dirty)
+	if vchunks.has(chunk_pos): #update the visual chunk, _if_ loaded.
+		vchunks[chunk_pos].update_tile(local_pos, tile)
 func Read(position: Vector2i) -> int:
 	var chunk_pos = getChunkCoord(position)
 	var local_pos = getLocalCoord(position)
@@ -53,7 +61,7 @@ func screenToTilemapCoords(position: Vector2) -> Vector2i:
 	floori(position.x / tileSize),
 	floori(position.y / tileSize) )
 
-func FindMostNeededChunk() -> Vector2i:
+func findMostNeededChunk() -> Vector2i:
 	var rootCoord := getChunkCoord(screenToTilemapCoords(player.global_position)) #calculate player pos
 	var radius := 0
 	while true:
@@ -66,9 +74,16 @@ func FindMostNeededChunk() -> Vector2i:
 					return coord
 		radius += 1
 	return Vector2i.ZERO #just Godot doesn't flag this as 'not all path return'.
-func DeleteChunksInRadius(radius: int) -> void:
+func deleteChunksInRadius(radius: int) -> void:
 	var rootCoord := getChunkCoord(screenToTilemapCoords(player.global_position)) #calculate player pos
 	for chunk_pos in chunks.keys(): #go over every position in chunks dictionary (key=position, value=chunk_data)
 		var offset: Vector2i = chunk_pos - rootCoord
 		if max(absi(offset.x), absi(offset.y)) > radius: #if exceeds radius, delete chunk data
 			chunks.erase(chunk_pos)
+
+func _process(delta: float) -> void:
+	if chunks.size() < 10:
+		var position = findMostNeededChunk()
+		createChunk(position)
+		createvchunk(position)
+		Write(Vector2i(5, 2), 0, 0)
