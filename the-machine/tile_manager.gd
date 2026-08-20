@@ -88,29 +88,39 @@ func findMostNeededChunk(termination: int) -> Variant:
 	var rootCoord := getChunkCoord(screenToTilemapCoords(player.global_position))
 
 	var chunk_height_pixels: float = ChunkSizeY * tileSize
-	var velocity_y: float = maxf(player.velocity.y, 0.0) # Only care about downward velocity.
-	var gravity: float = player.gravity
+	var velocity_y: float = maxf(player.velocity.y, 0.0)
 
-	var fall_distance: float = (
-		velocity_y * CHUNK_GENERATION_TIME
-		+ 0.5 * gravity * CHUNK_GENERATION_TIME * CHUNK_GENERATION_TIME
-	)
+	var chunk_offset: int = 0
 
-	var chunk_offset: int = ceili(fall_distance / chunk_height_pixels) + 1 # +1 safety chunk.
+	if velocity_y > 0.0:
+		var fall_distance: float = (
+			velocity_y * CHUNK_GENERATION_TIME
+			+ 0.5 * player.gravity * CHUNK_GENERATION_TIME * CHUNK_GENERATION_TIME
+		)
+
+		chunk_offset = ceili(fall_distance / chunk_height_pixels)
+
 	rootCoord.y += chunk_offset
+
 	var radius := 0
+
 	while true:
 		for y in range(-radius, radius + 1):
 			for x in range(-radius, radius + 1):
 				if max(absi(x), absi(y)) != radius:
-					continue #only check the current outer 'ring'
+					continue
+
 				var coord := rootCoord + Vector2i(x, y)
+
 				if not chunks.has(coord):
 					return coord
+
 		radius += 1
+
 		if radius > termination:
 			return null
-	return Vector2i.ZERO #just so Godot doesn't flag this as 'not all path return'.
+
+	return Vector2i.ZERO
 func deleteChunksInRadius(radius: int) -> void:
 	var rootCoord := getChunkCoord(screenToTilemapCoords(player.global_position)) #calculate player pos
 	for chunk_pos in chunks.keys(): #go over every position in chunks dictionary (key=position, value=chunk_data)

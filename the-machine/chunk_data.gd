@@ -43,68 +43,32 @@ func Write(position: Vector2i, tile: int) -> void:
 const AIR: int = -1
 const GROUND: int = 0
 
-func wrap_i32(value: int) -> int:
-	value &= 0xFFFFFFFF # Keep only the lowest 32 bits.
+func is_prime(n: int) -> bool:
+	if n < 2:
+		return false
 
-	if value >= 0x80000000:
-		value -= 0x100000000 # Interpret the result as signed two's-complement.
+	var i: int = 2
+	while i * i <= n:
+		if n % i == 0:
+			return false
+		i += 1
 
-	return value
-func multiply_i32(a: int, b: int) -> int:
-	return wrap_i32(a * b) # a and b are 32-bit, so their product safely fits inside GDScript's 64-bit int.
-func abs_i32(value: int) -> int:
-	if value < 0:
-		return wrap_i32(-value)
+	return true
 
-	return value
-func exponentiate(base: int, exponent: int) -> int:
-	var result: int = 1
 
-	while exponent > 0:
-		if (exponent & 1) != 0:
-			result = multiply_i32(result, base)
+func is_twin_prime(n: int) -> bool:
+	return is_prime(n) and (is_prime(n - 2) or is_prime(n + 2))
 
-		base = multiply_i32(base, base)
-		exponent >>= 1
 
-	return result
-func mix_bits(x: int) -> int:
-	x = wrap_i32(x ^ (x >> 16))
-	x = multiply_i32(x, 0x45D9F3B)
-	x = wrap_i32(x ^ (x >> 16))
-	x = multiply_i32(x, 0x45D9F3B)
-	x = wrap_i32(x ^ (x >> 16))
+func generate_tile(x: int, y: int) -> int:
+	var frag_x: int = -x + y
+	var frag_y: int = x + y
 
-	return x
+	frag_x += (x + y) & 1 # Restore the missing checkerboard parity.
 
-func generate_tile(position: Vector2i) -> int:
-	var px: int = wrap_i32(position.x)
-	var py: int = wrap_i32(position.y)
+	var r: int = absi(frag_x) ^ absi(frag_y)
 
-	var frag_x: int = wrap_i32(-px + py)
-	var frag_y: int = wrap_i32(px + py)
-
-	var parity: int = wrap_i32(px + py) & 1
-	frag_x = wrap_i32(frag_x + parity)
-
-	var x: int = frag_x
-	var y: int = frag_y
-
-	var r: int = abs_i32(x) ^ abs_i32(y)
-
-	var exponent: int = multiply_i32(multiply_i32(r, r), r) # Exactly r*r*r with 32-bit overflow after each multiplication.
-
-	r = exponentiate(r, exponent)
-	r = mix_bits(r)
-
-	var xor_value: int = abs_i32(x) ^ abs_i32(y)
-	r = multiply_i32(r, xor_value)
-
-	if r < 1999999999:
-		return AIR
-
-	return GROUND
-
+	return GROUND if is_twin_prime(r) else AIR
 
 func generate() -> void:
 	var chunk_origin := Vector2i(
@@ -115,4 +79,4 @@ func generate() -> void:
 		for x in range(sizeX):
 			var local_position := Vector2i(x, y)
 			var global_position := chunk_origin + local_position
-			set_tile(local_position, generate_tile(global_position), false)
+			set_tile(local_position, generate_tile(global_position.x, global_position.y), false)
