@@ -3,7 +3,7 @@ extends CharacterBody2D
 @export var speed: float = 80.0
 @export var jump_velocity: float = -300.0
 @export var gravity: float = 1000.0
-
+@onready var tile_manager: TileManager = $"../World/TileManager"
 
 func _physics_process(delta: float) -> void:
 	# Gravity
@@ -23,3 +23,12 @@ func _physics_process(delta: float) -> void:
 
 	# Move + collide
 	move_and_slide()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			var mouse_world_position := get_global_mouse_position()
+			var tile_position := tile_manager.screenToTilemapCoords(mouse_world_position)
+
+			tile_manager.Write(tile_position, -1, true) # -1 means empty.
